@@ -1,7 +1,130 @@
 #!usr/bin/env python
 # -*- coding: utf-8 -*-
-"""This is the pig game"""
+"""Pig Dice Game"""
 import random
+
+
+class Game(object):
+    """
+    Attributes: None
+    """
+    def __init__(self, players):
+        self.players = players
+        self.player_index = {n: Player(n) for n in self.players}
+        self.scores = {n: 0 for n in self.players}
+        self.max_score = 100
+        self.high_score = 0
+        self.starter = None
+        self.next_player = None
+        self.toss()
+
+        while self.max_score > self.high_score:
+            print '\n'
+            print '\n'
+            print '-' * 40
+            print '{}, your score is {}.'.format(self.next_player, self.scores[self.next_player])
+            print '\n'
+            print 'It is now {}, turn to roll: '.format(self.starter)
+            print '{}, your score is {}.'.format(self.starter, self.scores[self.starter])
+            choice = raw_input('Do you want to roll or hold? ( r or h ): ').lower()
+            if choice == 'r':
+                rolled = self.player_index[self.starter].throw()
+                total = self.scores[self.starter] + self.player_index[self.starter].turn_score
+                round_score = self.player_index[self.starter].turn_score
+                plyr_score = self.scores[self.starter]
+                name = self.starter
+                if rolled == 1:
+                    print '*' * 40
+                    print 'You rolled a 1 and loose all points in round.'
+                    print '*' * 40
+                    self.turn_score = 0
+                    self.turn_pass()
+                    print '{} your score is {}.'.format(name, plyr_score)
+                    continue
+                elif total > self.max_score:
+                    print '{} lost your score is {}.'.format(name, total)
+                    break
+                else:
+                    print '{} You rolled {}, and round score is {}.'.format(name, rolled, round_score)
+                    print '\n'
+                    print 'If you hold your score will be {}'.format(total)
+            elif choice == 'h':
+                plyr_score = self.scores[self.starter]
+                name = self.starter
+                total = plyr_score + self.player_index[self.starter].turn_score
+                if total == self.max_score:
+                    print '{} is the winner with score of {}.'.format(name, 100)
+                    break
+                elif total > self.max_score:
+                    print '{} you have lost, with score of {}.'.format(self.starter, total)
+                    break
+                else:
+                    self.scores[self.starter] = total
+                    self.player_index[self.starter].turn_score = 0
+                    self.player_index[self.starter].turn = False
+                    self.turn_pass()
+            else:
+                continue
+
+    def toss(self):
+        """ Coin toss and sets first, second player.
+        Args:
+            None
+
+        Returns:
+            None
+
+        Examples:
+            None
+        """
+        toss = random.choice(self.players)
+        toss = self.players.index(toss)
+        if toss == 0:
+            self.starter = self.players[0]
+            self.next_player = self.players[1]
+        else:
+            self.starter = self.players[1]
+            self.next_player = self.players[0]
+
+    def turn(self):
+        pass
+
+    def turn_pass(self):
+        hold_player = self.starter
+        self.starter = self.next_player
+        self.next_player = hold_player
+
+
+class Player(object):
+    """
+    Attributes: None
+    """
+    def __init__(self, name):
+        self.name = ''
+        self.turn_score = 0
+        self.turn = True
+
+    def throw(self):
+        """ Throws die and returns number rolled.
+        Args:
+            None
+
+        Returns:
+            rolled (int): Rolled die number.
+
+        Example:
+            >>> mike = Player('Mike')
+            >>> mike.toss()
+            >>> 2
+        """
+        die = Die()
+        rolled = die.roll()
+        if rolled != 1:
+            self.turn_score += rolled
+        else:
+            self.turn_score = 0
+            self.turn = False
+        return rolled
 
 
 class Die(object):
@@ -11,134 +134,20 @@ class Die(object):
     def __init__(self):
         self.rolled = 0
 
-    def throw(self):
-        """
+    def roll(self):
+        """Roll die functionality and returns number rolled.
         Args:
             None
 
-        Returns:
-            rolled (int) : Random number between 1 and 6.
+        Return:
+            self.rolled (int): Rolled die number.
 
         Examples:
-            >>> dice = Die()
-            >>> dice.throw()
-            >>> 3
+            None
         """
         self.rolled = random.choice(range(1, 7))
         return self.rolled
 
 
-class Player(object):
-    """
-    Attributes: None
-    """
-
-    def __init__(self, name):
-        self.name = name
-        self.score = 0
-        self.hold = False
-        self.roll = False
-
-    def choice(self):
-        """
-        Args:
-            None
-        """
-        plyr_choice = raw_input('Choose to hold or roll? \'r\' or \'h\':').lower()
-        if plyr_choice[:1] == 'r':
-            self.hold = False
-            self.roll = True
-        elif plyr_choice[:1] == 'h':
-            self.roll = False
-            self.hold = True
-        else:
-            self.choice()
-
-
-class Pig(object):
-    """
-    Attributes: None
-    """
-
-    def __init__(self, player1, player2):
-        self.player1 = Player(player1)
-        self.player2 = Player(player2)
-        self.turn_score = 0
-        self.toss = random.randint(0, 1)
-        self.current_player = None
-        self.next_player = None
-        self.die = Die()
-
-        if self.toss == 0:
-            self.current_player = self.player1
-            self.next_player = self.player2
-            self.turn()
-        else:
-            self.current_player = self.player2
-            self.next_player = self.player1
-            self.turn()
-
-    def turn(self):
-        """
-        Args:
-            None
-        """
-        while True:
-            print '='*80
-            print 'It\'s Player {}\'s turn.'.format(self.current_player.name)
-            print 'Your score is {}.'.format(self.current_player.score)
-            print 'Your score this turn {}.'.format(self.turn_score)
-            print '\n'
-            self.current_player.choice()
-            if self.current_player.roll:
-                self.die.throw()
-                throw_val = self.die.rolled
-                name = self.current_player.name
-                player_score = throw_val + self.current_player.score
-                if self.die.rolled == 1:
-                    print '\n'
-                    print 'Your turn is up, you rolled {}.'.format(throw_val)
-                    print '*'*40
-                    print '\n'
-                    self.turn_score = 0
-                    self.next_turn()
-                    self.turn_score = 0
-                elif player_score > 100:
-                    print '\n'
-                    print '*'*80
-                    print 'You have gone over {}.'.format(name)
-                    print 'You have a score of {}.'.format(player_score)
-                    print 'You have lost the game'
-                    break
-                else:
-                    print 'You have rolled {}.'.format(throw_val)
-                    print '\n'
-                    self.turn_score += throw_val
-            elif self.current_player.hold:
-                player_score = self.current_player.score + self.turn_score
-                if player_score == 100:
-                    print 'You are the Winner {}.'.format(self.current_player.name)
-                    print 'You have a score of {}.'.format(self.current_player.score)
-                    break
-                elif player_score > 100:
-                    plyr_name = self.current_player.name
-                    print 'You\'ve gone over {}'.format(plyr_name)
-                    break
-                else:
-                    self.current_player.score += self.turn_score
-                    self.turn_score = 0
-                    self.next_turn()
-                    self.turn_score = 0
-
-    def next_turn(self):
-        """
-        Args:
-            None
-        """
-        next_in_line = self.current_player
-        self.current_player = self.next_player
-        self.next_player = next_in_line
-
-
 if __name__ == '__main__':
-    GAME = Pig('Mike', 'Cerna')
+    pig = Game(['Player1', 'Player2'])
